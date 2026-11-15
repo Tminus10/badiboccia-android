@@ -1,0 +1,261 @@
+package swiss.reutener.boccia.ui.schedule
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.EventNote
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import swiss.reutener.boccia.R
+import swiss.reutener.boccia.app.LocalAppModel
+import swiss.reutener.boccia.app.LocalNavigator
+import swiss.reutener.boccia.model.CalendarEvent
+import swiss.reutener.boccia.model.Game
+import swiss.reutener.boccia.model.SeasonDetail
+import swiss.reutener.boccia.model.SwissTime
+import swiss.reutener.boccia.model.Team
+import swiss.reutener.boccia.model.allGames
+import swiss.reutener.boccia.model.chronological
+import swiss.reutener.boccia.model.hasBothTeams
+import swiss.reutener.boccia.model.isRunning
+import swiss.reutener.boccia.model.shownSetsA
+import swiss.reutener.boccia.model.shownSetsB
+import swiss.reutener.boccia.model.teamsById
+import swiss.reutener.boccia.ui.components.ArchivedSeasonNote
+import swiss.reutener.boccia.ui.components.SeasonLoadingState
+import swiss.reutener.boccia.ui.components.SeasonPicker
+import swiss.reutener.boccia.ui.components.TeamLabel
+import swiss.reutener.boccia.ui.longDate
+import swiss.reutener.boccia.ui.res
+import swiss.reutener.boccia.ui.theme.EmptyStateText
+import swiss.reutener.boccia.ui.theme.Theme
+import swiss.reutener.boccia.ui.title
+
+/**
+ * Every game of the season by day (plus the website's calendar entries such as the group draw),
+ * latest day first: the games that have no date yet, upcoming days, today, then past days.
+ * It opens at today (or the next game day).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ScheduleScreen(contentPadding: PaddingValues) {
+    val model = LocalAppModel.current
+    Column(Modifier.fillMaxSize()) {
+        Box(Modifier.fillMaxWidth().statusBarsPadding().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
+            SeasonPicker()
+        }
+        val detail = model.selectedDetail
+        PullToRefreshBox(
+            isRefreshing = model.isLoading && detail != null,
+            onRefresh = { model.refresh() },
+            modifier = Modifier.weight(1f),
+        ) {
+            if (detail == null) {
+                SeasonLoadingState()
+            } else {
+                ScheduleList(detail, contentPadding)
+            }
+        }
+    }
+}
+
+private class Day(val day: String, val games: List<Game>, val events: List<CalendarEvent>)
+
+private fun scheduleDays(detail: SeasonDetail, games: List<Game>): List<Day> {
+    val gamesByDay = games.filter { it.playedDate != null }.groupBy { it.playedDate!! }
+    val eventsByDay = detail.events.groupBy { it.date }
+    return (gamesByDay.keys + eventsByDay.keys)
+        .sortedDescending()
+        .map { Day(it, gamesByDay[it].orEmpty().sortedWith(chronological), eventsByDay[it].orEmpty()) }
+}
+
+@Composable
+private fun ScheduleList(detail: SeasonDetail, contentPadding: PaddingValues) {
+    val res = res()
+    val games = detail.allGames.filter { it.hasBothTeams }
+    val days = scheduleDays(detail, games)
+    val undated = games.filter { it.playedDate == null }
+    val listState = rememberLazyListState()
+
+    // Start at today (or the next game day) instead of the latest day; a finished season starts at the top.
+    var scrolledToToday by rememberSaveable(detail.season.id) { mutableStateOf(false) }
+    LaunchedEffect(detail.season.id) {
+        if (scrolledToToday) return@LaunchedEffect
+        scrolledToToday = true
+        val target = days.lastOrNull { it.day >= SwissTime.today } ?: return@LaunchedEffect
+        listState.scrollToItem(headerIndex(target.day, days, undated))
+    }
+
+    LazyColumn(
+        state = listState,
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = contentPadding.calculateBottomPadding() + 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        item(key = "note") { ArchivedSeasonNote() }
+        if (days.isEmpty() && undated.isEmpty()) {
+            item(key = "empty") { EmptyStateText(stringResource(R.string.no_games_yet)) }
+        }
+        if (undated.isNotEmpty()) {
+            sectionHeader("undated") { SectionTitle(stringResource(R.string.not_yet_scheduled), Theme.secondaryText) }
+            cardRows(undated.map { game -> "game-${game.id}" to @Composable { ScheduleRow(game, detail) } })
+            if (detail.season.isRunning) {
+                item(key = "undated-footer") {
+                    Text(
+                        stringResource(R.string.schedule_footer),
+                        Modifier.widthIn(max = 700.dp).fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+                        color = Theme.secondaryText,
+                        fontSize = 13.sp,
+                    )
+                }
+            }
+        }
+        for (day in days) {
+            val isToday = day.day == SwissTime.today
+            sectionHeader("day-${day.day}") {
+                val text = SwissTime.dateTime(day.day)?.longDate(res) ?: day.day
+                SectionTitle(
+                    if (isToday) stringResource(R.string.today_date, text) else text,
+                    if (isToday) Theme.qualifier else Theme.secondaryText,
+                )
+            }
+            cardRows(
+                day.events.map { event -> "event-${event.id}" to @Composable { EventRow(event) } } +
+                    day.games.map { game -> "game-${game.id}" to @Composable { ScheduleRow(game, detail) } },
+            )
+        }
+    }
+}
+
+/** Index of a day's header in the list above, to scroll there: note, (undated header, rows, footer), then each day's header and rows. */
+private fun headerIndex(day: String, days: List<Day>, undated: List<Game>): Int {
+    var index = 1
+    if (days.isEmpty() && undated.isEmpty()) index += 1
+    if (undated.isNotEmpty()) index += 1 + undated.size + 1
+    for (d in days) {
+        if (d.day == day) return index
+        index += 1 + d.events.size + d.games.size
+    }
+    return 0
+}
+
+private fun LazyListScope.sectionHeader(key: String, content: @Composable () -> Unit) {
+    item(key = key) {
+        Box(Modifier.widthIn(max = 700.dp).fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp)) {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun SectionTitle(text: String, color: Color) {
+    Text(text, Modifier.semantics { heading() }, color = color, fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
+}
+
+/** Rows grouped in one card, like an iOS inset-grouped list section: rounded ends, hairlines between. */
+private fun LazyListScope.cardRows(rows: List<Pair<String, @Composable () -> Unit>>) {
+    rows.forEachIndexed { index, (key, content) ->
+        item(key = key) {
+            val radius = Theme.cornerRadius
+            val shape = RoundedCornerShape(
+                topStart = if (index == 0) radius else 0.dp,
+                topEnd = if (index == 0) radius else 0.dp,
+                bottomStart = if (index == rows.lastIndex) radius else 0.dp,
+                bottomEnd = if (index == rows.lastIndex) radius else 0.dp,
+            )
+            Column(Modifier.widthIn(max = 700.dp).fillMaxWidth().clip(shape).background(Theme.card)) {
+                if (index > 0) HorizontalDivider(Modifier.padding(start = 98.dp, end = 16.dp), color = Theme.separator)
+                content()
+            }
+        }
+    }
+}
+
+/** Compact game row: time on the left, both teams stacked, sets on the right. */
+@Composable
+private fun ScheduleRow(game: Game, detail: SeasonDetail) {
+    val navigator = LocalNavigator.current
+    val teams = detail.teamsById
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable { navigator.openGame(game.id) }
+            .padding(horizontal = 12.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.width(74.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            game.gameTime?.let { Text(it.take(5), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold) }
+            Text(game.title(res()), color = Theme.secondaryText, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            TeamLine(game, game.teamAId?.let { teams[it] }, game.shownSetsA)
+            TeamLine(game, game.teamBId?.let { teams[it] }, game.shownSetsB)
+        }
+    }
+}
+
+@Composable
+private fun TeamLine(game: Game, team: Team?, sets: Int?) {
+    val isWinner = team != null && game.winnerTeamId == team.id
+    val isLoser = team != null && game.winnerTeamId != null && !isWinner
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        TeamLabel(team, Modifier.weight(1f), avatarSize = 22.dp, emphasized = isWinner, dimmed = isLoser)
+        if (sets != null) {
+            Text("$sets", color = if (isLoser) Theme.secondaryText else Color.White, fontSize = 17.sp, fontWeight = FontWeight.Bold)
+        }
+    }
+}
+
+/** A calendar entry from the website (group draw, victory party, ...). */
+@Composable
+private fun EventRow(event: CalendarEvent) {
+    Row(
+        Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp).semantics(mergeDescendants = true) {},
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(event.time?.take(5).orEmpty(), Modifier.width(74.dp), color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+        Icon(Icons.AutoMirrored.Outlined.EventNote, null, Modifier.size(22.dp), tint = Theme.qualifier)
+        Column {
+            Text(event.title, color = Color.White, fontWeight = FontWeight.Medium)
+            event.location?.takeIf { it.isNotEmpty() }?.let { Text(it, color = Theme.secondaryText, fontSize = 12.sp) }
+        }
+    }
+}

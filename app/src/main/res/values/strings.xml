@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- German is the source language (Swiss German, never "ß"), like in the iOS app and on the website.
+     Same wording as there: the iOS app's Localizable.xcstrings and badiboccia/lang/glossary.json. -->
+<resources>
+    <string name="app_name" translatable="false">Boccia</string>
+
+    <!-- Tabs -->
+    <string name="tab_overview">Übersicht</string>
+    <string name="tab_bracket">Turnierbaum</string>
+    <string name="tab_schedule">Spielplan</string>
+
+    <!-- Seasons -->
+    <string name="season">Saison</string>
+    <string name="choose_season">Saison wählen</string>
+    <string name="archived_note">Archiv – diese Saison ist abgeschlossen</string>
+    <string name="upcoming_note">Bevorstehend – diese Saison hat noch nicht begonnen</string>
+    <string name="try_again">Erneut versuchen</string>
+
+    <!-- Phases and placeholders -->
+    <string name="group_name">Gruppe %1$s</string>
+    <string name="phase_group">Gruppenphase</string>
+    <string name="phase_qf">Viertelfinal</string>
+    <string name="phase_sf">Halbfinal</string>
+    <string name="phase_final">Final</string>
+    <string name="phase_third">Spiel um Platz 3</string>
+    <string name="placeholder_group_winner">Sieger Gruppe %1$s</string>
+    <string name="placeholder_group_runner_up">Zweiter Gruppe %1$s</string>
+    <string name="placeholder_winner">Sieger %1$s %2$d</string>
+    <string name="placeholder_loser">Verlierer %1$s %2$d</string>
+    <!-- Phase bar abbreviations: group phase, quarter-finals, semi-finals, final -->
+    <string name="phase_abbr_groups">GP</string>
+    <string name="phase_abbr_qf">VF</string>
+    <string name="phase_abbr_sf">HF</string>
+    <string name="phase_abbr_final">F</string>
+
+    <!-- Overview -->
+    <string name="segment_recent">Zuletzt</string>
+    <string name="segment_today">Heute</string>
+    <string name="segment_upcoming">Demnächst</string>
+    <string name="no_results_yet">Noch keine Resultate.</string>
+    <string name="no_games_today">Heute finden keine Spiele statt.</string>
+    <string name="no_scheduled_games">Keine geplanten Spiele.</string>
+    <string name="finished">Beendet</string>
+    <string name="all_day">Ganztags</string>
+    <string name="final_standings">Rangliste</string>
+    <string name="open">offen</string>
+    <string name="result_unknown">Resultat unbekannt</string>
+    <string name="winner_known">Sieger bekannt, Resultat unbekannt</string>
+    <string name="no_teams_yet">Noch keine Teams.</string>
+    <string name="column_team">Team</string>
+    <!-- Abbreviation: games played -->
+    <string name="abbr_played">SP</string>
+    <!-- Abbreviation: won -->
+    <string name="abbr_won">S</string>
+    <!-- Abbreviation: drawn -->
+    <string name="abbr_drawn">U</string>
+    <!-- Abbreviation: lost -->
+    <string name="abbr_lost">N</string>
+    <!-- Abbreviation: set difference -->
+    <string name="abbr_set_difference">SD</string>
+    <!-- Abbreviation: points -->
+    <string name="abbr_points">PKT</string>
+    <string name="standing_description">Rang %1$d, %2$s, %3$d Punkte, %4$d Siege, %5$d Niederlagen</string>
+    <string name="qualified">qualifiziert</string>
+    <string name="result_description">Resultat %1$d zu %2$d</string>
+
+    <!-- Bracket -->
+    <string name="not_set_yet">Noch nicht festgelegt</string>
+    <string name="champion">Turniersieger</string>
+    <string name="game_details_hint">Zeigt Details zum Spiel</string>
+
+    <!-- Schedule -->
+    <string name="no_games_yet">Noch keine Spiele.</string>
+    <string name="not_yet_scheduled">Noch ohne Termin</string>
+    <string name="schedule_footer">Beteiligte Teams können den Termin in der App oder auf der Website festlegen.</string>
+    <string name="today_date">Heute, %1$s</string>
+
+    <!-- Game -->
+    <string name="round">Runde</string>
+    <string name="date">Datum</string>
+    <string name="time">Zeit</string>
+    <string name="result">Resultat</string>
+    <string name="still_open">noch offen</string>
+    <string name="unknown">unbekannt</string>
+    <string name="interrupted_note">Unterbrochenes Spiel – beide Teams erhalten einen Punkt.</string>
+    <string name="game_not_found">Spiel nicht gefunden</string>
+    <string name="winner">Sieger</string>
+
+    <!-- Team -->
+    <string name="wins">Siege</string>
+    <string name="losses">Niederlagen</string>
+    <string name="draws">Unentschieden</string>
+    <string name="versus">gegen %1$s</string>
+    <string name="opponent_unknown">Gegner noch offen</string>
+    <string name="no_games_this_season">Keine Spiele in dieser Saison.</string>
+    <string name="team_load_failed">Team konnte nicht geladen werden</string>
+    <string name="phase_with_group">%1$s · Gruppe %2$s</string>
+    <!-- Badge: won -->
+    <string name="badge_won">S</string>
+    <!-- Badge: lost -->
+    <string name="badge_lost">N</string>
+    <!-- Badge: draw -->
+    <string name="badge_draw">U</string>
+
+    <!-- Settings -->
+    <string name="settings">Einstellungen</string>
+    <string name="server">Server</string>
+    <string name="server_production">Produktiv</string>
+    <string name="server_development">Entwicklung (DEV)</string>
+    <string name="server_local">Lokal (localhost:8090)</string>
+    <string name="close">Schliessen</string>
+    <string name="back">Zurück</string>
+
+    <!-- API errors -->
+    <string name="error_wrong_pin">Falscher PIN. Bitte versuche es nochmals.</string>
+    <string name="error_locked_out">Zu viele Fehlversuche. Bitte versuche es in 15 Minuten erneut.</string>
+    <string name="error_unauthorized">Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.</string>
+    <string name="error_season_archived">Diese Saison ist archiviert und kann nicht mehr bearbeitet werden.</string>
+    <string name="error_not_participant">Nur die beiden beteiligten Teams können dieses Spiel bearbeiten.</string>
+    <string name="error_opponent_unknown">Für dieses Spiel steht der Gegner noch nicht fest.</string>
+    <string name="error_invalid_score">Ungültiges Resultat. Erlaubt sind 2:0, 2:1, 1:2, 0:2 und 1:1.</string>
+    <string name="error_draw_not_allowed">Ein Unentschieden ist nur in der Gruppenphase möglich.</string>
+    <string name="error_invalid_date">Ungültiges Datum.</string>
+    <string name="error_invalid_time">Ungültige Uhrzeit.</string>
+    <string name="error_not_found">Nicht gefunden.</string>
+    <string name="error_no_current_season">Es läuft gerade keine Saison.</string>
+    <string name="error_not_own_team">Du kannst nur das Foto deines eigenen Teams ändern.</string>
+    <string name="error_invalid_photo">Das Foto konnte nicht verarbeitet werden. Bitte wähle ein anderes Bild.</string>
+    <string name="error_schedule_conflict">Zu dieser Zeit ist bereits ein anderes Spiel geplant.</string>
+    <string name="error_network">Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.</string>
+    <string name="error_api_missing">Dieser Server unterstützt die App noch nicht.</string>
+    <string name="error_unexpected">Unerwartete Antwort vom Server.</string>
+</resources>
