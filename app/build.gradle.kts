@@ -1,8 +1,15 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.serialization)
 }
+
+// The Google Play upload key lives outside the repo (see CLAUDE.md, "Release"). Without it,
+// release builds are simply unsigned.
+val signingFile = file(providers.gradleProperty("bocciaSigning").getOrElse("${System.getProperty("user.home")}/.boccia-signing/keystore.properties"))
+val signing = Properties().apply { if (signingFile.exists()) signingFile.inputStream().use(::load) }
 
 android {
     namespace = "swiss.reutener.boccia"
@@ -16,8 +23,20 @@ android {
         versionName = "1.0"
     }
 
+    signingConfigs {
+        if (signing.isNotEmpty()) {
+            create("upload") {
+                storeFile = file(signing.getProperty("storeFile"))
+                storePassword = signing.getProperty("storePassword")
+                keyAlias = signing.getProperty("keyAlias")
+                keyPassword = signing.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
+            signingConfig = signingConfigs.findByName("upload")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")

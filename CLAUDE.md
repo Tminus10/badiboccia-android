@@ -40,6 +40,12 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 - App language for testing: `adb shell cmd locale set-app-locales swiss.reutener.boccia --locales de-CH` (or `en-GB`).
 - Debug builds default to DEV and can switch server with the gear icon on the overview; release builds only use production. `LOCAL` is the website's `./dev/serve.sh` as the emulator sees the Mac (`http://10.0.2.2:8090`, cleartext allowed in debug only).
 
+## Release (Google Play)
+
+- Distributed through Google Play internal testing (like TestFlight). Play App Signing holds the app signing key; we sign with an **upload key** in `~/.boccia-signing/` (`boccia-upload.jks` + `keystore.properties` with the passwords), outside the repo and never committed. `app/build.gradle.kts` reads it (override with `-PbocciaSigning=<path>`); without it, release builds are unsigned.
+- Every upload needs a higher `versionCode` in `app/build.gradle.kts` (`versionName` follows the iOS app's marketing version). Build with `./gradlew bundleRelease` → `app/build/outputs/bundle/release/app-release.aab`.
+- Release builds are shrunk with R8: after dependency or model changes, smoke-test `./gradlew assembleRelease` on the emulator (uninstall the debug build first, the signatures differ). Release builds only talk to production.
+
 ## Architecture
 
 - Same shape as iOS: no per-screen view models. One `AppModel` (`app/AppModel.kt`, an `AndroidViewModel` with Compose state) holds server, seasons, loaded `SeasonDetail`s and does all API calls; screens read it via `LocalAppModel`.
