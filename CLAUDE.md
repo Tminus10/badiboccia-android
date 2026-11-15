@@ -5,6 +5,26 @@ Kotlin + Jetpack Compose app for the BadiBoccia league; the Android counterpart 
 `src/Controllers/ApiController.php`). Screens, rules and wording follow the iOS app; when in doubt,
 read the matching Swift file there.
 
+**Keep the iOS app in sync**: both apps have the same features, screens, rules and wording. A
+change to features, behavior, business rules, API models or texts here needs the same change in
+`../badiboccia-ios`, in the same task (or say clearly that it's still missing). Matching files:
+
+| iOS (`BocciaScore/`) | Android (`app/src/main/java/swiss/reutener/boccia/`) |
+|---|---|
+| `App/AppModel.swift` | `app/AppModel.kt` |
+| `App/BocciaScoreApp.swift` (Navigator, Route) | `app/BocciaApp.kt`, `app/Navigation.kt` |
+| `Model/APIModels.swift` | `model/ApiModels.kt` |
+| `Model/Domain.swift` | `model/Domain.kt` + `ui/Labels.kt` (texts) |
+| `Networking/APIClient.swift`, `Persistence.swift` | `net/ApiClient.kt`, `net/SessionStore.kt`, `net/ResponseCache.kt` |
+| `Views/Overview/*` | `ui/overview/*` |
+| `Views/Bracket/*` | `ui/bracket/*` |
+| `Views/Schedule/ScheduleView.swift` | `ui/schedule/ScheduleScreen.kt` |
+| `Views/Game/*` | `ui/game/*` |
+| `Views/Team/*` (My Team, team page, photo, settings) | `ui/team/*`, `ui/settings/SettingsScreen.kt` |
+| `Views/Components/*` | `ui/components/*`, `ui/theme/Theme.kt` |
+| `Resources/Localizable.xcstrings` | `res/values/strings.xml` (de), `res/values-en/strings.xml` |
+| `BocciaScoreTests/` | `app/src/test/` (same fixtures) |
+
 ## Build & run
 
 - Gradle wrapper, AGP 9.5, Kotlin 2.4 (AGP's built-in Kotlin), Compose BOM, compileSdk/targetSdk 37, minSdk 29. Versions in `gradle/libs.versions.toml`.
