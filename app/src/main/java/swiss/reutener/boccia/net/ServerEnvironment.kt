@@ -13,6 +13,10 @@ enum class ServerEnvironment(val key: String, val websiteUrl: String) {
 
     val apiBaseUrl: String get() = "$websiteUrl/api/v1"
 
+    /** A website page in the app's language: the website switches (and stays) there via `?lang=`. */
+    fun websitePage(path: String = "", language: String): String =
+        (if (path.isEmpty()) websiteUrl else "$websiteUrl/$path") + "?lang=$language"
+
     val title: Int
         get() = when (this) {
             PRODUCTION -> R.string.server_production

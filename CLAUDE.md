@@ -23,6 +23,8 @@ export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
 ## Architecture
 
 - Same shape as iOS: no per-screen view models. One `AppModel` (`app/AppModel.kt`, an `AndroidViewModel` with Compose state) holds server, seasons, loaded `SeasonDetail`s and does all API calls; screens read it via `LocalAppModel`.
+- The team login (`net/SessionStore.kt`) is stored per server, encrypted with an Android Keystore key (the counterpart of the iOS Keychain).
+- **Demo season**: like on iOS, the website's "Demo Cup" isn't in `/seasons`; `/api/v1` gives its id and public PIN. "Demo ausprobieren" under My Team lists its teams; while a demo team is logged in, `AppModel.isDemoSession` puts the demo season into `seasons` as the `currentSeason`, and `ServerIndicator` shows the mint "DEMO" marker.
 - `LocalNavigator` opens the game and team pages from anywhere (`app/BocciaApp.kt`, Navigation Compose with type-safe routes in `app/Navigation.kt`).
 - `model/ApiModels.kt` mirrors the API JSON (snake_case via `JsonNamingStrategy.SnakeCase`); **keep it in sync with `ApiController.php` and the iOS `APIModels.swift`**.
 - `model/Domain.kt`: derived logic (Swiss time, game rules, sort orders); `ui/Labels.kt`: texts derived from the model (game titles, placeholders, dates, error messages). Dates and times are Swiss local time.

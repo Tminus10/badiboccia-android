@@ -49,6 +49,18 @@ fun Game.opponent(teamId: Int): Int? = when (teamId) {
     else -> null
 }
 
+/** The set scores a result may have: a draw (1:1, an unfinished game) only in the group phase. */
+val Game.allowedScores: List<Score> get() = if (phase == Phase.GROUP) Score.all else Score.all.filter { !it.isDraw }
+
+data class Score(val a: Int, val b: Int) {
+    val isDraw: Boolean get() = a == b
+
+    companion object {
+        /** Same order and set as the website's GameController::VALID_SCORES. */
+        val all = listOf(Score(2, 0), Score(2, 1), Score(1, 1), Score(1, 2), Score(0, 2))
+    }
+}
+
 /** Sort order for lists of games: by date, timed games before untimed ones on the same day, undated games last. */
 val chronological: Comparator<Game> = compareBy<Game>({ it.playedDate ?: "9999" }, { it.gameTime ?: "99" }, { it.id })
 

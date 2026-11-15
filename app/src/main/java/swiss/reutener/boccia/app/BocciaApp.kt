@@ -5,6 +5,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.Groups
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.filled.SportsBaseball
 import androidx.compose.material.icons.outlined.CalendarMonth
 import androidx.compose.material.icons.outlined.EmojiEvents
@@ -40,23 +42,33 @@ import swiss.reutener.boccia.R
 import swiss.reutener.boccia.ui.bracket.BracketScreen
 import swiss.reutener.boccia.ui.components.ServerIndicatorLine
 import swiss.reutener.boccia.ui.game.GameDetailScreen
+import swiss.reutener.boccia.ui.game.ResultEntryScreen
+import swiss.reutener.boccia.ui.game.ScheduleGameScreen
+import swiss.reutener.boccia.ui.settings.SettingsScreen
+import swiss.reutener.boccia.ui.team.DemoTeamsScreen
+import swiss.reutener.boccia.ui.team.MyTeamScreen
 import swiss.reutener.boccia.ui.overview.OverviewScreen
 import swiss.reutener.boccia.ui.schedule.ScheduleScreen
 import swiss.reutener.boccia.ui.team.TeamDetailScreen
 import swiss.reutener.boccia.ui.theme.Theme
 import swiss.reutener.boccia.ui.theme.ThemedScreen
 
-/** The tabs, plus the game and team pages pushed over them. */
+/** The tabs, plus the pages pushed over them (game, team, editing, demo, settings). */
 @Composable
 fun BocciaApp() {
     val model = LocalAppModel.current
     val navController = rememberNavController()
     val navigator = remember(navController) {
         object : Navigator {
-            override fun openGame(id: Int) = navController.navigate(GameRoute(id))
-            override fun openTeam(id: Int, seasonId: Int?) = navController.navigate(TeamRoute(id, seasonId))
+            override fun open(route: Any) = navController.navigate(route)
+            override fun back() {
+                navController.popBackStack()
+            }
         }
     }
+
+    // The token is revoked when an admin resets the team's PIN.
+    LaunchedEffect(model.server) { model.validateSession() }
 
     // Keep scores fresh while the app is open: results come in from other teams' phones.
     val lifecycle = LocalLifecycleOwner.current.lifecycle
@@ -73,13 +85,15 @@ fun BocciaApp() {
         ThemedScreen {
             NavHost(navController, startDestination = TabsRoute) {
                 composable<TabsRoute> { Tabs() }
-                composable<GameRoute> { entry ->
-                    GameDetailScreen(entry.toRoute<GameRoute>().id, onBack = { navController.popBackStack() })
-                }
+                composable<GameRoute> { entry -> GameDetailScreen(entry.toRoute<GameRoute>().id) }
                 composable<TeamRoute> { entry ->
                     val route = entry.toRoute<TeamRoute>()
-                    TeamDetailScreen(route.id, route.seasonId, onBack = { navController.popBackStack() })
+                    TeamDetailScreen(route.id, route.seasonId)
                 }
+                composable<ResultEntryRoute> { entry -> ResultEntryScreen(entry.toRoute<ResultEntryRoute>().gameId) }
+                composable<ScheduleGameRoute> { entry -> ScheduleGameScreen(entry.toRoute<ScheduleGameRoute>().gameId) }
+                composable<DemoTeamsRoute> { DemoTeamsScreen() }
+                composable<SettingsRoute> { SettingsScreen() }
             }
             ServerIndicatorLine()
         }
@@ -127,6 +141,7 @@ private fun TabContent(tab: AppTab, padding: PaddingValues) {
         AppTab.OVERVIEW -> OverviewScreen(padding)
         AppTab.BRACKET -> BracketScreen(padding)
         AppTab.SCHEDULE -> ScheduleScreen(padding)
+        AppTab.TEAM -> MyTeamScreen(padding)
     }
 }
 
@@ -136,4 +151,5 @@ private fun AppTab.appearance() = when (this) {
     AppTab.OVERVIEW -> TabAppearance(R.string.tab_overview, Icons.Filled.SportsBaseball, Icons.Outlined.SportsBaseball)
     AppTab.BRACKET -> TabAppearance(R.string.tab_bracket, Icons.Filled.EmojiEvents, Icons.Outlined.EmojiEvents)
     AppTab.SCHEDULE -> TabAppearance(R.string.tab_schedule, Icons.Filled.CalendarMonth, Icons.Outlined.CalendarMonth)
+    AppTab.TEAM -> TabAppearance(R.string.tab_my_team, Icons.Filled.Groups, Icons.Outlined.Groups)
 }

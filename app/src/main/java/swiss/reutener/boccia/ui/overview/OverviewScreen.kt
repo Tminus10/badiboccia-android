@@ -23,10 +23,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Hive
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
@@ -45,7 +43,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import swiss.reutener.boccia.BuildConfig
 import swiss.reutener.boccia.R
 import swiss.reutener.boccia.app.LocalAppModel
 import swiss.reutener.boccia.app.LocalNavigator
@@ -60,7 +57,6 @@ import swiss.reutener.boccia.ui.components.SeasonLoadingState
 import swiss.reutener.boccia.ui.components.SeasonPicker
 import swiss.reutener.boccia.ui.components.ServerBadge
 import swiss.reutener.boccia.ui.components.TeamAvatar
-import swiss.reutener.boccia.ui.settings.ServerDialog
 import swiss.reutener.boccia.ui.theme.Theme
 import swiss.reutener.boccia.ui.theme.card
 
@@ -106,7 +102,6 @@ fun OverviewScreen(contentPadding: PaddingValues) {
 
 @Composable
 private fun Header() {
-    var showsServers by remember { mutableStateOf(false) }
     Column(Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(Icons.Filled.Hive, null, Modifier.size(36.dp), tint = Theme.qualifier)
@@ -118,17 +113,9 @@ private fun Header() {
                 fontWeight = FontWeight.Bold,
             )
             ServerBadge(Modifier.padding(start = 4.dp))
-            Spacer(Modifier.weight(1f))
-            // Debug builds only: switch between the live site, DEV and the local dev server.
-            if (BuildConfig.DEBUG) {
-                IconButton(onClick = { showsServers = true }) {
-                    Icon(Icons.Outlined.Settings, stringResource(R.string.settings), tint = Color.White)
-                }
-            }
         }
         SeasonPicker()
     }
-    if (showsServers) ServerDialog(onDismiss = { showsServers = false })
 }
 
 @Composable

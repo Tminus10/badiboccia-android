@@ -17,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.outlined.CloudOff
+import androidx.compose.material.icons.outlined.EditNote
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -58,6 +59,7 @@ import swiss.reutener.boccia.model.Phase
 import swiss.reutener.boccia.model.Team
 import swiss.reutener.boccia.model.TeamDetail
 import swiss.reutener.boccia.model.chronological
+import swiss.reutener.boccia.model.hasScore
 import swiss.reutener.boccia.model.isComplete
 import swiss.reutener.boccia.model.isDraw
 import swiss.reutener.boccia.model.opponent
@@ -82,7 +84,7 @@ private val phaseOrder = listOf(Phase.FINAL, Phase.THIRD, Phase.SF, Phase.QF, Ph
  * season it took part in, like the website's team page).
  */
 @Composable
-fun TeamDetailScreen(teamId: Int, initialSeasonId: Int?, onBack: () -> Unit) {
+fun TeamDetailScreen(teamId: Int, initialSeasonId: Int?) {
     val model = LocalAppModel.current
     val scope = rememberCoroutineScope()
     var detail by remember { mutableStateOf<TeamDetail?>(null) }
@@ -104,7 +106,7 @@ fun TeamDetailScreen(teamId: Int, initialSeasonId: Int?, onBack: () -> Unit) {
     }
     LaunchedEffect(teamId) { load() }
 
-    DetailScaffold(detail?.team?.name.orEmpty(), onBack) {
+    DetailScaffold(detail?.team?.name.orEmpty()) {
         val loaded = detail
         val failure = error
         when {
@@ -228,9 +230,12 @@ private fun SeasonMenu(detail: TeamDetail, seasonId: Int, selectSeason: (Int) ->
     }
 }
 
-/** One of the team's games, from its point of view: opponent, round, date, and the result (W/L). */
+/**
+ * One of the team's games, from its point of view: opponent, round, date, and the result (W/L).
+ * Also used for the logged-in team's games under "Mein Team".
+ */
 @Composable
-private fun TeamGameRow(game: Game, teamId: Int, opponent: Team?) {
+fun TeamGameRow(game: Game, teamId: Int, opponent: Team?) {
     val navigator = LocalNavigator.current
     val model = LocalAppModel.current
     val scope = rememberCoroutineScope()
@@ -265,7 +270,11 @@ private fun TeamGameRow(game: Game, teamId: Int, opponent: Team?) {
                 overflow = TextOverflow.Ellipsis,
             )
         }
-        if (game.isComplete) ResultBadge(game, teamId)
+        if (game.isComplete) {
+            ResultBadge(game, teamId)
+        } else if (model.canEdit(game)) {
+            Icon(Icons.Outlined.EditNote, stringResource(R.string.enter_result), tint = Theme.qualifier)
+        }
     }
 }
 
@@ -279,7 +288,7 @@ private fun ResultBadge(game: Game, teamId: Int) {
         else -> R.string.badge_draw to Color.Gray
     }
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("$mine:$theirs", color = Color.White, fontWeight = FontWeight.SemiBold)
+        if (game.hasScore) Text("$mine:$theirs", color = Color.White, fontWeight = FontWeight.SemiBold)
         Box(Modifier.size(22.dp).background(color.copy(alpha = 0.85f), CircleShape), contentAlignment = Alignment.Center) {
             Text(stringResource(letter), color = Color.White, fontSize = 12.sp, fontWeight = FontWeight.Bold)
         }

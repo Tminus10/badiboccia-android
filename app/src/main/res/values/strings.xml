@@ -130,4 +130,56 @@
     <string name="error_network">Keine Verbindung zum Server. Bitte prüfe deine Internetverbindung.</string>
     <string name="error_api_missing">Dieser Server unterstützt die App noch nicht.</string>
     <string name="error_unexpected">Unerwartete Antwort vom Server.</string>
+    <!-- My Team -->
+    <string name="tab_my_team">Mein Team</string>
+    <string name="log_in">Anmelden</string>
+    <string name="log_out">Abmelden</string>
+    <string name="logged_in">Angemeldet</string>
+    <string name="login_intro">Tippe auf dein Team und gib euren 4-stelligen PIN ein. Danach könnt ihr Resultate und Termine eurer Spiele eintragen.</string>
+    <string name="no_season_login">Es läuft gerade keine Saison. Anmelden ist nur während einer laufenden Saison nötig.</string>
+    <string name="try_demo">Demo ausprobieren</string>
+    <string name="demo_footer">Neugierig? Probiere die App im Demo Cup mit erfundenen Teams aus: Resultate und Termine eintragen, Fotos ändern. Jede Nacht wird alles zurückgesetzt.</string>
+    <string name="demo">Demo</string>
+    <string name="demo_mode">Demo-Modus</string>
+    <string name="demo_pin_hint">Wähle ein Team und gib den PIN %1$s ein.</string>
+    <string name="enter_pin">PIN eingeben</string>
+    <string name="pin_progress">%1$d von %2$d Ziffern eingegeben</string>
+    <string name="delete">Löschen</string>
+    <string name="open_games">Offene Spiele</string>
+    <string name="played">Gespielt</string>
+    <string name="no_open_games">Keine offenen Spiele.</string>
+    <string name="tap_game_hint">Tippe auf ein Spiel, um das Resultat oder den Termin einzutragen.</string>
+
+    <!-- Editing a game -->
+    <string name="enter_result">Resultat eintragen</string>
+    <string name="correct_result">Resultat korrigieren</string>
+    <string name="set_date">Termin festlegen</string>
+    <string name="change_date">Termin ändern</string>
+    <string name="change_log_note">Jede Änderung wird mit dem Namen deines Teams protokolliert.</string>
+    <string name="login_hint_game">Spielst du in diesem Spiel? Melde dich unter „Mein Team“ mit dem PIN deines Teams an, um das Resultat einzutragen.</string>
+    <string name="result_sets_header">Resultat (Sätze) · %1$s – %2$s</string>
+    <string name="draw_only_interrupted">1:1 nur für ein unterbrochenes Gruppenspiel, z. B. wegen Regen.</string>
+    <string name="played_on">Gespielt am</string>
+    <string name="time_of_day">Uhrzeit</string>
+    <string name="save">Speichern</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="ok">OK</string>
+    <string name="team_wins">%1$s gewinnt</string>
+    <string name="interrupted_one_point_each">Unterbrochen – je 1 Punkt</string>
+    <string name="score_description">%1$s %2$d zu %3$d %4$s</string>
+    <string name="no_time_note">Ohne Uhrzeit erscheint das Spiel als ganztägiger Termin im Kalender.</string>
+    <string name="schedule_conflict_title">Terminüberschneidung</string>
+    <string name="schedule_conflict_message">Zu dieser Zeit ist bereits ein anderes Spiel geplant:</string>
+    <string name="save_anyway">Trotzdem speichern</string>
+    <string name="all_day_lower">ganztags</string>
+    <string name="only_my_games">Nur meine Spiele</string>
+
+    <!-- Settings -->
+    <string name="open_website">Website öffnen</string>
+    <string name="rules">Spielregeln</string>
+    <string name="subscribe_calendar">Kalender abonnieren</string>
+    <string name="admins_note">Saisons, Teams und den Turnierbaum verwalten Admins weiterhin auf der Website.</string>
+    <string name="version">Version</string>
+    <string name="last_updated">Zuletzt aktualisiert</string>
+    <string name="dev_only_note">Nur in Entwicklungs-Builds sichtbar. Die Anmeldung gilt jeweils pro Server.</string>
 </resources>

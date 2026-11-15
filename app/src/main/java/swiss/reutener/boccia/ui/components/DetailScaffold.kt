@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -31,25 +32,33 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import swiss.reutener.boccia.R
+import swiss.reutener.boccia.app.LocalNavigator
 import swiss.reutener.boccia.ui.theme.Theme
 import swiss.reutener.boccia.ui.theme.card
 
-/** A pushed page (game, team): top bar with back arrow and title over scrolling content, on the gradient. */
+/** A pushed page (game, team, editing): top bar with back arrow and title over scrolling content, on the gradient. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailScaffold(title: String, onBack: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+fun DetailScaffold(
+    title: String,
+    actions: @Composable RowScope.() -> Unit = {},
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    val navigator = LocalNavigator.current
     Column(Modifier.fillMaxSize()) {
         CenterAlignedTopAppBar(
             title = { Text(title, maxLines = 1, overflow = TextOverflow.Ellipsis, fontWeight = FontWeight.SemiBold) },
             navigationIcon = {
-                IconButton(onClick = onBack) {
+                IconButton(onClick = { navigator.back() }) {
                     Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.back))
                 }
             },
+            actions = actions,
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = Color.Transparent,
                 titleContentColor = Color.White,
                 navigationIconContentColor = Color.White,
+                actionIconContentColor = Theme.qualifier,
             ),
         )
         Column(

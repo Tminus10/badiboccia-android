@@ -12,7 +12,12 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.WorkspacePremium
+import androidx.compose.material.icons.outlined.EditCalendar
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -28,6 +33,8 @@ import androidx.compose.ui.unit.sp
 import swiss.reutener.boccia.R
 import swiss.reutener.boccia.app.LocalAppModel
 import swiss.reutener.boccia.app.LocalNavigator
+import swiss.reutener.boccia.app.ResultEntryRoute
+import swiss.reutener.boccia.app.ScheduleGameRoute
 import swiss.reutener.boccia.model.Game
 import swiss.reutener.boccia.model.Placeholder
 import swiss.reutener.boccia.model.SeasonDetail
@@ -59,12 +66,12 @@ import swiss.reutener.boccia.ui.title
 
 /** A single game: big scoreboard header and its details. */
 @Composable
-fun GameDetailScreen(gameId: Int, onBack: () -> Unit) {
+fun GameDetailScreen(gameId: Int) {
     val model = LocalAppModel.current
     val res = res()
     val detail = model.details.values.firstOrNull { it.game(gameId) != null }
     val game = detail?.game(gameId)
-    DetailScaffold(game?.title(res).orEmpty(), onBack) {
+    DetailScaffold(game?.title(res).orEmpty()) {
         if (detail == null || game == null) {
             Column(Modifier.fillMaxWidth().padding(top = 80.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.AutoMirrored.Outlined.HelpOutline, null, Modifier.size(48.dp), tint = Theme.secondaryText)
@@ -97,6 +104,44 @@ fun GameDetailScreen(gameId: Int, onBack: () -> Unit) {
                 }
             }
         }
+        if (model.canEdit(game)) {
+            EditSection(game)
+        } else if (model.session == null && game.hasBothTeams && model.selectedSeason?.isCurrent == true && !game.hasScore) {
+            InfoCard {
+                Text(stringResource(R.string.login_hint_game), Modifier.padding(16.dp), color = Theme.secondaryText, fontSize = 13.sp)
+            }
+        }
+    }
+}
+
+/** For the two teams playing it, in the current season: entering the result or fixing the date. */
+@Composable
+private fun EditSection(game: Game) {
+    val navigator = LocalNavigator.current
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        InfoCard {
+            EditLink(Icons.Outlined.EditNote, stringResource(if (game.hasScore) R.string.correct_result else R.string.enter_result)) {
+                navigator.open(ResultEntryRoute(game.id))
+            }
+            HorizontalDivider(Modifier.padding(start = 56.dp), color = Theme.separator)
+            EditLink(Icons.Outlined.EditCalendar, stringResource(if (game.playedDate == null) R.string.set_date else R.string.change_date)) {
+                navigator.open(ScheduleGameRoute(game.id))
+            }
+        }
+        Text(stringResource(R.string.change_log_note), Modifier.padding(horizontal = 16.dp), color = Theme.secondaryText, fontSize = 13.sp)
+    }
+}
+
+@Composable
+private fun EditLink(icon: ImageVector, title: String, open: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = open).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Icon(icon, null, tint = Theme.qualifier)
+        Text(title, Modifier.weight(1f), color = Theme.qualifier, fontSize = 16.sp)
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Theme.tertiaryText)
     }
 }
 

@@ -5,14 +5,21 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonNamingStrategy
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.Serializable
+import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
 import swiss.reutener.boccia.model.ApiErrorBody
 import swiss.reutener.boccia.model.ApiInfo
 import swiss.reutener.boccia.model.Game
 import swiss.reutener.boccia.model.SeasonDetail
 import swiss.reutener.boccia.model.SeasonSummary
 import swiss.reutener.boccia.model.SeasonsResponse
+import swiss.reutener.boccia.model.Team
 import swiss.reutener.boccia.model.TeamDetail
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -51,14 +58,61 @@ class ApiClient(private val baseUrl: String) {
 
     suspend fun team(id: Int): TeamDetail = decode(get("teams/$id"))
 
+    suspend fun login(teamId: Int, pin: String, device: String): LoginResponse =
+        decode(post("auth/login", body("team_id" to teamId, "pin" to pin, "device" to device)))
+
+    suspend fun logout(token: String) {
+        post("auth/logout", body(), token)
+    }
+
+    suspend fun me(token: String): Team = decode<TeamResponse>(get("me", token)).team
+
+    /** Always sends date and time, as explicit nulls when cleared -- the API treats a missing key as "keep". */
+    suspend fun submitResult(gameId: Int, setsA: Int, setsB: Int, playedDate: String?, gameTime: String?, token: String): Game =
+        decode<GameResponse>(
+            post(
+                "games/$gameId/result",
+                body("sets_a" to setsA, "sets_b" to setsB, "played_date" to playedDate, "game_time" to gameTime),
+                token,
+            ),
+        ).game
+
+    /** Throws an ApiException with code `schedule_conflict` (and the clashing games) unless `force` is set. */
+    suspend fun schedule(gameId: Int, playedDate: String, gameTime: String?, force: Boolean, token: String): Game =
+        decode<GameResponse>(
+            post("games/$gameId/schedule", body("played_date" to playedDate, "game_time" to gameTime, "force" to force), token),
+        ).game
+
     // MARK: Plumbing
 
-    private suspend fun get(path: String): String = send(request(path).get().build())
+    private suspend fun get(path: String, token: String? = null): String = send(request(path, token).get().build())
 
-    private fun request(path: String): Request.Builder =
+    private suspend fun post(path: String, body: JsonObject, token: String? = null): String =
+        send(request(path, token).post(body.toString().toRequestBody(JSON_TYPE)).build())
+
+    /** A JSON object with explicit nulls (the shared `json` config leaves nulls out). */
+    private fun body(vararg fields: Pair<String, Any?>) = JsonObject(
+        fields.associate { (key, value) ->
+            key to when (value) {
+                null -> JsonNull
+                is Number -> JsonPrimitive(value)
+                is Boolean -> JsonPrimitive(value)
+                else -> JsonPrimitive(value.toString())
+            }
+        },
+    )
+
+    private fun request(path: String, token: String? = null): Request.Builder =
         Request.Builder()
             .url(if (path.isEmpty()) baseUrl else "$baseUrl/$path")
             .header("Accept", "application/json")
+            .apply {
+                if (token != null) {
+                    header("Authorization", "Bearer $token")
+                    // Some shared-hosting PHP setups drop the Authorization header; the API accepts this too.
+                    header("X-Api-Token", token)
+                }
+            }
 
     private suspend fun send(request: Request): String = withContext(Dispatchers.IO) {
         val response = try {
@@ -95,9 +149,20 @@ class ApiClient(private val baseUrl: String) {
             coerceInputValues = true
         }
 
+        private val JSON_TYPE = "application/json".toMediaType()
+
         private val http = OkHttpClient.Builder()
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
             .build()
     }
 }
+
+@Serializable
+data class LoginResponse(val token: String, val team: Team)
+
+@Serializable
+private data class TeamResponse(val team: Team)
+
+@Serializable
+private data class GameResponse(val game: Game)

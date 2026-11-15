@@ -20,6 +20,10 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.EventNote
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -53,6 +57,8 @@ import swiss.reutener.boccia.model.Team
 import swiss.reutener.boccia.model.allGames
 import swiss.reutener.boccia.model.chronological
 import swiss.reutener.boccia.model.hasBothTeams
+import swiss.reutener.boccia.model.hasScore
+import swiss.reutener.boccia.model.involves
 import swiss.reutener.boccia.model.isRunning
 import swiss.reutener.boccia.model.shownSetsA
 import swiss.reutener.boccia.model.shownSetsB
@@ -76,9 +82,20 @@ import swiss.reutener.boccia.ui.title
 @Composable
 fun ScheduleScreen(contentPadding: PaddingValues) {
     val model = LocalAppModel.current
+    var onlyMine by rememberSaveable { mutableStateOf(false) }
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.fillMaxWidth().statusBarsPadding().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
             SeasonPicker()
+            // Logged-in teams can narrow the schedule down to their own games.
+            if (model.session != null) {
+                IconToggleButton(onlyMine, onCheckedChange = { onlyMine = it }, Modifier.align(Alignment.CenterEnd).padding(end = 8.dp)) {
+                    Icon(
+                        if (onlyMine) Icons.Filled.Person else Icons.Outlined.Person,
+                        stringResource(R.string.only_my_games),
+                        tint = if (onlyMine) Theme.qualifier else Color.White,
+                    )
+                }
+            }
         }
         val detail = model.selectedDetail
         PullToRefreshBox(
@@ -89,7 +106,7 @@ fun ScheduleScreen(contentPadding: PaddingValues) {
             if (detail == null) {
                 SeasonLoadingState()
             } else {
-                ScheduleList(detail, contentPadding)
+                ScheduleList(detail, contentPadding, onlyMine = onlyMine && model.session != null)
             }
         }
     }
@@ -97,19 +114,20 @@ fun ScheduleScreen(contentPadding: PaddingValues) {
 
 private class Day(val day: String, val games: List<Game>, val events: List<CalendarEvent>)
 
-private fun scheduleDays(detail: SeasonDetail, games: List<Game>): List<Day> {
+private fun scheduleDays(detail: SeasonDetail, games: List<Game>, onlyMine: Boolean): List<Day> {
     val gamesByDay = games.filter { it.playedDate != null }.groupBy { it.playedDate!! }
-    val eventsByDay = detail.events.groupBy { it.date }
+    val eventsByDay = if (onlyMine) emptyMap() else detail.events.groupBy { it.date }
     return (gamesByDay.keys + eventsByDay.keys)
         .sortedDescending()
         .map { Day(it, gamesByDay[it].orEmpty().sortedWith(chronological), eventsByDay[it].orEmpty()) }
 }
 
 @Composable
-private fun ScheduleList(detail: SeasonDetail, contentPadding: PaddingValues) {
+private fun ScheduleList(detail: SeasonDetail, contentPadding: PaddingValues, onlyMine: Boolean) {
     val res = res()
-    val games = detail.allGames.filter { it.hasBothTeams }
-    val days = scheduleDays(detail, games)
+    val teamId = LocalAppModel.current.session?.team?.id
+    val games = detail.allGames.filter { it.hasBothTeams && (!onlyMine || teamId == null || it.involves(teamId)) }
+    val days = scheduleDays(detail, games, onlyMine)
     val undated = games.filter { it.playedDate == null }
     val listState = rememberLazyListState()
 
@@ -227,6 +245,9 @@ private fun ScheduleRow(game: Game, detail: SeasonDetail) {
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             TeamLine(game, game.teamAId?.let { teams[it] }, game.shownSetsA)
             TeamLine(game, game.teamBId?.let { teams[it] }, game.shownSetsB)
+        }
+        if (LocalAppModel.current.canEdit(game) && !game.hasScore) {
+            Icon(Icons.Outlined.EditNote, stringResource(R.string.enter_result), tint = Theme.qualifier)
         }
     }
 }
