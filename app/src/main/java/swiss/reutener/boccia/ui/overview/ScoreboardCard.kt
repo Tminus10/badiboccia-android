@@ -120,7 +120,9 @@ internal fun games(detail: SeasonDetail, segment: Segment): List<Game> {
             val lastDay = played.maxOfOrNull { it.playedDate!! }
                 // Results without a date (older seasons) still deserve a place: show the latest bracket games.
                 ?: return detail.bracketGames.filter { it.isComplete }.reversed().take(4)
-            played.filter { it.playedDate == lastDay }.sortedWith(chronological)
+            // Latest game on top, like the schedule; games without a time at the end.
+            played.filter { it.playedDate == lastDay }
+                .sortedWith(compareByDescending<Game> { it.gameTime.orEmpty() }.thenByDescending { it.id })
         }
     }
 }
