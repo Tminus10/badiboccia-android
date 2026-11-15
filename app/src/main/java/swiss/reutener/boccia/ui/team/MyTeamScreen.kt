@@ -386,6 +386,9 @@ private fun LazyListScope.loggedIn(team: Team) {
             Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, null, tint = Theme.tertiaryText)
         }
     }
+    item(key = "photo") {
+        Row(Modifier.widthIn(max = 700.dp).fillMaxWidth()) { TeamPhotoPicker(team) }
+    }
     item(key = "games") {
         val model = LocalAppModel.current
         val detail = model.currentDetail

@@ -110,7 +110,7 @@ fun TeamDetailScreen(teamId: Int, initialSeasonId: Int?) {
         val loaded = detail
         val failure = error
         when {
-            loaded != null -> Content(loaded, seasonId) { seasonId = it }
+            loaded != null -> Content(loaded, seasonId, selectSeason = { seasonId = it }, reload = { load() })
             failure != null -> Column(
                 Modifier.fillMaxWidth().padding(top = 80.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -129,7 +129,7 @@ fun TeamDetailScreen(teamId: Int, initialSeasonId: Int?) {
 }
 
 @Composable
-private fun Content(detail: TeamDetail, seasonId: Int, selectSeason: (Int) -> Unit) {
+private fun Content(detail: TeamDetail, seasonId: Int, selectSeason: (Int) -> Unit, reload: suspend () -> Unit) {
     val res = res()
     val team = detail.team
     val enrollment = detail.enrollments.firstOrNull { it.seasonId == seasonId }
@@ -138,9 +138,16 @@ private fun Content(detail: TeamDetail, seasonId: Int, selectSeason: (Int) -> Un
     var showsPhoto by remember { mutableStateOf(false) }
 
     Column(Modifier.fillMaxWidth().padding(vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        TeamAvatar(team, 96.dp, if (team.photoUrl != null) Modifier.clickable { showsPhoto = true } else Modifier)
+        TeamAvatar(
+            team,
+            96.dp,
+            if (team.photoUrl != null) Modifier.clickable(onClickLabel = stringResource(R.string.enlarge_photo)) { showsPhoto = true } else Modifier,
+        )
         Text(team.name, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
         team.playersSubtitle?.let { Text(it, color = Theme.secondaryText) }
+        if (LocalAppModel.current.session?.team?.id == team.id) {
+            TeamPhotoPicker(team, onUploaded = reload)
+        }
         Record(games, team.id, Modifier.padding(top = 6.dp))
     }
 

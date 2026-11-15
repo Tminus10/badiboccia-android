@@ -2,6 +2,7 @@ package swiss.reutener.boccia.app
 
 import android.app.Application
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.compose.runtime.getValue
@@ -12,9 +13,11 @@ import androidx.core.content.edit
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import swiss.reutener.boccia.model.Game
 import swiss.reutener.boccia.model.Score
 import swiss.reutener.boccia.model.SeasonDetail
@@ -28,6 +31,7 @@ import swiss.reutener.boccia.net.ApiException
 import swiss.reutener.boccia.net.ResponseCache
 import swiss.reutener.boccia.net.ServerEnvironment
 import swiss.reutener.boccia.net.SessionStore
+import swiss.reutener.boccia.net.TeamPhoto
 import swiss.reutener.boccia.net.TeamSession
 import java.time.Instant
 import java.time.LocalDate
@@ -276,6 +280,26 @@ class AppModel(application: Application) : AndroidViewModel(application) {
     suspend fun schedule(game: Game, date: LocalDate, time: LocalTime?, force: Boolean) {
         authorized { token -> client.schedule(game.id, date.toString(), time?.format(TIME), force, token) }
         runCatching { loadSeason(game.seasonId) }
+    }
+
+    // MARK: Team photo
+
+    /**
+     * Uploads a new photo for the logged-in team, then reloads so every avatar shows it (the photo
+     * URL carries a version, so cached images of the old photo aren't reused).
+     */
+    suspend fun uploadPhoto(uri: Uri) {
+        val teamId = session?.team?.id ?: throw ApiException("unauthorized", 401)
+        val jpeg = withContext(Dispatchers.Default) {
+            runCatching { TeamPhoto.squareJpeg(getApplication<Application>().contentResolver, uri, side = 1000) }.getOrNull()
+        } ?: throw ApiException("invalid_photo")
+        val team = authorized { token -> client.uploadPhoto(teamId, jpeg, token) }
+        session?.let {
+            val updated = TeamSession(it.token, team)
+            session = updated
+            sessions.save(updated, server)
+        }
+        refresh().join()
     }
 
     /** Runs a call with the session token; a rejected token logs the team out. */

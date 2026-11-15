@@ -155,4 +155,9 @@
     <string name="version">Version</string>
     <string name="last_updated">Last Updated</string>
     <string name="dev_only_note">Only visible in development builds. Logins are per server.</string>
+    <string name="add_photo">Add Photo</string>
+    <string name="change_photo">Change Photo</string>
+    <string name="uploading_photo">Uploading photo …</string>
+    <string name="photo_not_saved">Photo Not Saved</string>
+    <string name="enlarge_photo">Enlarge Photo</string>
 </resources>

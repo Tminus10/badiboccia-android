@@ -182,4 +182,10 @@
     <string name="version">Version</string>
     <string name="last_updated">Zuletzt aktualisiert</string>
     <string name="dev_only_note">Nur in Entwicklungs-Builds sichtbar. Die Anmeldung gilt jeweils pro Server.</string>
+    <!-- Team photo -->
+    <string name="add_photo">Foto hinzufügen</string>
+    <string name="change_photo">Foto ändern</string>
+    <string name="uploading_photo">Foto wird hochgeladen …</string>
+    <string name="photo_not_saved">Foto nicht gespeichert</string>
+    <string name="enlarge_photo">Foto vergrössern</string>
 </resources>

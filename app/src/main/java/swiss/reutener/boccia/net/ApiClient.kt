@@ -10,6 +10,7 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.Serializable
 import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.MultipartBody
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -83,6 +84,15 @@ class ApiClient(private val baseUrl: String) {
             post("games/$gameId/schedule", body("played_date" to playedDate, "game_time" to gameTime, "force" to force), token),
         ).game
 
+    /** Replaces the team's photo; `jpeg` should already be square (the server crops to the center). */
+    suspend fun uploadPhoto(teamId: Int, jpeg: ByteArray, token: String): Team {
+        val body = MultipartBody.Builder()
+            .setType(MultipartBody.FORM)
+            .addFormDataPart("photo", "photo.jpg", jpeg.toRequestBody("image/jpeg".toMediaType()))
+            .build()
+        return decode<TeamResponse>(send(request("teams/$teamId/photo", token).post(body).build(), upload = true)).team
+    }
+
     // MARK: Plumbing
 
     private suspend fun get(path: String, token: String? = null): String = send(request(path, token).get().build())
@@ -114,9 +124,9 @@ class ApiClient(private val baseUrl: String) {
                 }
             }
 
-    private suspend fun send(request: Request): String = withContext(Dispatchers.IO) {
+    private suspend fun send(request: Request, upload: Boolean = false): String = withContext(Dispatchers.IO) {
         val response = try {
-            http.newCall(request).execute()
+            (if (upload) uploadHttp else http).newCall(request).execute()
         } catch (e: IOException) {
             throw ApiException(ApiException.NETWORK, serverMessage = e.localizedMessage)
         }
@@ -154,6 +164,12 @@ class ApiClient(private val baseUrl: String) {
         private val http = OkHttpClient.Builder()
             .connectTimeout(20, TimeUnit.SECONDS)
             .readTimeout(20, TimeUnit.SECONDS)
+            .build()
+
+        /** A photo takes longer on a slow beach connection. */
+        private val uploadHttp = http.newBuilder()
+            .writeTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
             .build()
     }
 }
