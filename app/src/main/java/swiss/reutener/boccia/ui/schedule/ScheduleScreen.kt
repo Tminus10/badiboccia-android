@@ -55,7 +55,6 @@ import swiss.reutener.boccia.model.SeasonDetail
 import swiss.reutener.boccia.model.SwissTime
 import swiss.reutener.boccia.model.Team
 import swiss.reutener.boccia.model.allGames
-import swiss.reutener.boccia.model.chronological
 import swiss.reutener.boccia.model.hasBothTeams
 import swiss.reutener.boccia.model.hasScore
 import swiss.reutener.boccia.model.involves
@@ -75,7 +74,8 @@ import swiss.reutener.boccia.ui.title
 
 /**
  * Every game of the season by day (plus the website's calendar entries such as the group draw),
- * latest day first: the games that have no date yet, upcoming days, today, then past days.
+ * latest first: the games that have no date yet, upcoming days, today, then past days, and within
+ * a day the latest game on top.
  * It opens at today (or the next game day).
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -112,14 +112,36 @@ fun ScheduleScreen(contentPadding: PaddingValues) {
     }
 }
 
-private class Day(val day: String, val games: List<Game>, val events: List<CalendarEvent>)
+/** A row of a day: a game or a calendar entry. */
+private sealed interface Entry {
+    val key: String
+    val time: String?
+
+    data class GameEntry(val game: Game) : Entry {
+        override val key get() = "game-${game.id}"
+        override val time get() = game.gameTime
+    }
+
+    data class EventEntry(val event: CalendarEvent) : Entry {
+        override val key get() = "event-${event.id}"
+        override val time get() = event.time
+    }
+}
+
+/** Latest first, like the days; without a time (all day) at the end of the day. */
+private val latestFirst: Comparator<Entry> = compareByDescending<Entry> { it.time.orEmpty() }
+    .thenBy { if (it is Entry.GameEntry) 0 else 1 }
+    .thenByDescending { (it as? Entry.GameEntry)?.game?.id ?: (it as Entry.EventEntry).event.id }
+
+private class Day(val day: String, val entries: List<Entry>)
 
 private fun scheduleDays(detail: SeasonDetail, games: List<Game>, onlyMine: Boolean): List<Day> {
-    val gamesByDay = games.filter { it.playedDate != null }.groupBy { it.playedDate!! }
-    val eventsByDay = if (onlyMine) emptyMap() else detail.events.groupBy { it.date }
-    return (gamesByDay.keys + eventsByDay.keys)
-        .sortedDescending()
-        .map { Day(it, gamesByDay[it].orEmpty().sortedWith(chronological), eventsByDay[it].orEmpty()) }
+    val events = if (onlyMine) emptyList() else detail.events
+    val entries = games.filter { it.playedDate != null }.map { Entry.GameEntry(it) } + events.map { Entry.EventEntry(it) }
+    return entries
+        .groupBy { if (it is Entry.GameEntry) it.game.playedDate!! else (it as Entry.EventEntry).event.date }
+        .toSortedMap(reverseOrder())
+        .map { (day, dayEntries) -> Day(day, dayEntries.sortedWith(latestFirst)) }
 }
 
 @Composable
@@ -174,8 +196,14 @@ private fun ScheduleList(detail: SeasonDetail, contentPadding: PaddingValues, on
                 )
             }
             cardRows(
-                day.events.map { event -> "event-${event.id}" to @Composable { EventRow(event) } } +
-                    day.games.map { game -> "game-${game.id}" to @Composable { ScheduleRow(game, detail) } },
+                day.entries.map { entry ->
+                    entry.key to @Composable {
+                        when (entry) {
+                            is Entry.GameEntry -> ScheduleRow(entry.game, detail)
+                            is Entry.EventEntry -> EventRow(entry.event)
+                        }
+                    }
+                },
             )
         }
     }
@@ -188,7 +216,7 @@ private fun headerIndex(day: String, days: List<Day>, undated: List<Game>): Int 
     if (undated.isNotEmpty()) index += 1 + undated.size + 1
     for (d in days) {
         if (d.day == day) return index
-        index += 1 + d.events.size + d.games.size
+        index += 1 + d.entries.size
     }
     return 0
 }
