@@ -19,7 +19,7 @@ android {
         applicationId = "swiss.reutener.boccia"
         minSdk = 29
         targetSdk = 37
-        versionCode = 2
+        versionCode = 3
         versionName = "1.0"
     }
 
